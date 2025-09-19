@@ -32,3 +32,31 @@ REFRAG says:
 “Use embeddings to find the books and hand the LLM a summary vector of each book, only opening full pages when absolutely necessary.”
 
 This move from “embeddings just to search” to “embeddings to search and to decode” is the core difference that makes REFRAG a breakthrough for long-context and retrieval-heavy LLM systems.
+
+ *\~30% latency reduction* depends on:
+
+1. **Your dataset size & chunking**
+
+   * In your current setup, you’re multiplying the same sentence 30×, so the chunks are very repetitive.
+   * That makes retrieval + expansion trivial → REFRAG can’t really “skip work,” so speed gains might not be obvious.
+
+2. **LLM backend**
+
+   * You’re using **GPT-2** (small, local model). Its generation latency is *tiny compared to embedding/retrieval*, so even if REFRAG expands fewer chunks, the total time difference is small.
+   * The **30% claim** usually comes from large LLMs (like GPT-3.5, LLaMA-70B) where prompt length dominates cost.
+
+3. **Expansion policy**
+
+   * Your code expands up to `max_expands=min(8, k)`. That already limits prompt bloat.
+   * If you raise `k` (say 64 or 128), **standard RAG prompt explodes**, but REFRAG still stops around \~8 expansions → then you’ll see a big gap.
+
+---
+
+⚡ In short:
+
+* Yes, your code is structured so REFRAG *can* beat RAG.
+* But with **small GPT-2 + repetitive docs**, the benchmark won’t show a strong 30% speedup.
+* If you swap in a bigger model (even `facebook/opt-1.3b`) and set `k=64+`, you should see REFRAG latency curve flatten while RAG keeps rising.
+
+---
+
